@@ -35,21 +35,29 @@ public:
   };
 
   // Copy constructor
-  Vector(const Vector &v)
-      : sz(v.size()), cap(v.size()), elem(new value_type[v.size()]) {
+  Vector(const Vector &v) : sz(v.sz), cap(v.sz), elem(new value_type[v.sz]) {
     for (int i = 0; i < sz; i++) {
       elem[i] = v[i];
     }
   };
 
-  // Move constructor
-  Vector(Vector &&v) : sz(v.size()), cap(v.size()) {
-    elem = v.elem;
-    v.elem = nullptr;
+  // Copy assignment
+  Vector &operator=(const Vector &v) {
+    sz = v.sz;
+    auto *p = new value_type[sz];
+    for (int i = 0; i < sz; i++) {
+      p[i] = v[i];
+    }
+    delete[] elem;
+    elem = p;
+    return *this;
   }
 
-  // Copy assignment
-  Vector &operator=(const Vector &v) { return Vector(v); }
+  // Move constructor
+  Vector(Vector &&v) : sz(v.sz), cap(v.sz), elem(v.elem) {
+    v.elem = nullptr;
+    v.sz = 0;
+  }
 
   // Move assignment
   Vector &operator=(Vector &&v) { return Vector(v); }
