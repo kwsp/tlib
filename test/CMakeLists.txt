@@ -1,4 +1,5 @@
 set(CMAKE_CXX_STANDARD 14)
+project(tlib_test CXX)
 
 #Requires CMake 3.16+
 include(FetchContent)

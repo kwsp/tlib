@@ -21,10 +21,9 @@ public:
   using pointer = T *;
 
   // Construct/copy/destroy
-  Vector() : sz(0), cap(_MIN_SZ), elem(new value_type[_MIN_SZ]){};
-  Vector(size_type sz) : sz(sz), cap(sz), elem(new value_type[sz]){};
-  Vector(size_type sz, const_reference v)
-      : sz(sz), cap(sz), elem(new value_type[sz]) {
+  Vector(size_type sz) : sz(sz), cap(sz), elem(new value_type[sz]) {}
+  Vector() : Vector(_MIN_SZ) { sz = 0; }
+  Vector(size_type sz, const_reference v) : Vector(sz) {
     for (size_type i = 0; i < sz; i++) {
       elem[i] = v;
     }
@@ -44,15 +43,16 @@ public:
   };
 
   // Move constructor
-  Vector(Vector &&);
+  Vector(Vector &&v) : sz(v.size()), cap(v.size()) {
+    elem = v.elem;
+    v.elem = nullptr;
+  }
 
   // Copy assignment
-  Vector &operator=(const Vector &v) {
-    return Vector(v);
-  };
+  Vector &operator=(const Vector &v) { return Vector(v); }
 
   // Move assignment
-  Vector &operator=(Vector &&);
+  Vector &operator=(Vector &&v) { return Vector(v); }
 
   ~Vector() { delete[] elem; };
 
@@ -117,7 +117,7 @@ public:
 private:
   size_type sz;
   size_type cap;
-  size_type _factor = 2;
+  const size_type _factor = 2;
 
   value_type *elem;
 };
