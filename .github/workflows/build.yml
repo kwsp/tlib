@@ -15,9 +15,7 @@ jobs:
       run: sudo apt install build-essential cmake 
 
     - name: Build tests
-      run: cd test
-      run: cmake -B build
-      run: cmake --build build -j
+      run: cd test && cmake -B build && cmake --build build -j
 
     - name: Test
       run: cd build && make test
