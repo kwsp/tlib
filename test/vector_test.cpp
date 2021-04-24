@@ -13,8 +13,8 @@ TEST(VectorTestConstructor, SizeConstructor) {
 
 TEST(VectorTestConstructor, DefaultValue) {
   auto v = tlib::Vector<int>(10, 123);
-   for (int i = 0; i < 10; i++) {
-   ASSERT_EQ(v[i], 123);
+  for (int i = 0; i < 10; i++) {
+    ASSERT_EQ(v[i], 123);
   }
 }
 
@@ -106,6 +106,15 @@ TEST_F(VectorTestFixture, Front) {
 }
 
 // TODO: Test iterators
+TEST(VectorTest, Iterator) {
+  tlib::Vector<int> v{1, 2, 3, 4, 5};
+  tlib::Vector<int> v1 = v;
+  auto it = v.begin();
+  for (auto vv : v1) {
+    ASSERT_EQ(*it++, vv);
+  }
+  ASSERT_EQ(it, v.end());
+}
 
 TEST(VectorTest, Resize) {
   tlib::Vector<int> v;

@@ -16,9 +16,60 @@ namespace tlib {
 
 template <typename T> class Vector {
 public:
+
+  struct Iterator {
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using reference = T &;
+    using const_reference = const T &;
+    using pointer = T *;
+
+    Iterator(pointer ptr) : m_ptr(ptr){};
+
+    reference operator*() { return *m_ptr; }
+    pointer operator->() { return m_ptr; }
+    Iterator &operator++() {
+      m_ptr++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    friend bool operator==(const Iterator x, const Iterator y) {
+      return x.m_ptr == y.m_ptr;
+    }
+    friend bool operator!=(const Iterator x, const Iterator y) {
+      return x.m_ptr != y.m_ptr;
+    }
+    friend bool operator>(const Iterator x, const Iterator y) {
+      return x.m_ptr > y.m_ptr;
+    }
+    friend bool operator>=(const Iterator x, const Iterator y) {
+      return x.m_ptr >= y.m_ptr;
+    }
+    friend bool operator<(const Iterator x, const Iterator y) {
+      return x.m_ptr < y.m_ptr;
+    }
+    friend bool operator<=(const Iterator x, const Iterator y) {
+      return x.m_ptr <= y.m_ptr;
+    }
+
+  private:
+    pointer m_ptr;
+  };
+
   // Construct/copy/destroy
   Vector(std::size_t sz) : elem(new T[sz]) { space = last = elem + sz; }
+
+  // Default constructor
   Vector() : Vector(_MIN_SZ) { space = elem; }
+
+  // Default value constructor
   Vector(std::size_t sz, const T &val) : elem(new T[sz]) {
     space = elem;
     last = elem + sz;
@@ -28,6 +79,7 @@ public:
     }
   };
 
+  // Initializer list
   Vector(std::initializer_list<T> lst) : elem(new T[lst.size()]) {
     space = elem;
     last = elem + lst.size();
@@ -72,15 +124,18 @@ public:
   ~Vector() { delete[] elem; };
 
   // Capacity
-  bool empty() const noexcept { return size() == 0; }
+  inline bool empty() const noexcept { return size() == 0; }
+
   std::size_t size() const noexcept { return space - elem; }
+
   std::size_t capacity() const noexcept { return last - elem; }
+
   void resize(std::size_t sz) {
     reserve(sz);
     space = elem + sz;
   }
 
-  void reserve(std::size_t newsz) { // Increase capacity to sz
+  void reserve(std::size_t newsz) { // Increase capacity to newsz
     if (newsz > capacity()) {
       auto *new_ptr = new T[newsz];
       for (int i = 0; i < size(); i++)
@@ -110,18 +165,18 @@ public:
     return elem[n];
   }
 
-  T &operator[](std::size_t n) { return at(n); }
-  const T &operator[](std::size_t n) const { return at(n); }
+  T &operator[](std::size_t n) { return elem[n]; }
+  const T &operator[](std::size_t n) const { return elem[n]; }
+
   T &front() {
     if (empty())
       throw std::out_of_range("Empty");
-
     return *elem;
   }
+
   T &back() {
     if (empty())
       throw std::out_of_range("Empty");
-
     return *(space - 1);
   }
 
@@ -133,29 +188,23 @@ public:
     new (space) T{el};
     space++;
   }
-  void pop_back() { space--; }
+
+  void pop_back() {
+    if (empty())
+      throw std::out_of_range("Empty");
+    space--;
+  }
 
   T *data() const { return elem; }
+
+  // Iterator
+  Iterator begin() { return Iterator(elem); }
+  Iterator end() { return Iterator(space); }
 
 private:
   T *elem;  // pointer to first element
   T *space; // pointer to first unused element
   T *last;  // pointer to last slot (one past allocated space)
-};
-
-template <typename T> class VectorIterator {
-public:
-  using value_type = T;
-  using difference_type = std::ptrdiff_t;
-  using reference = T &;
-  using const_reference = const T &;
-  using pointer = T *;
-  using iterator_category = std::input_iterator_tag;
-
-  VectorIterator() {}
-  VectorIterator(Vector<T> v);
-
-private:
 };
 
 } // namespace tlib
