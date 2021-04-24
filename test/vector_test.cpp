@@ -26,26 +26,30 @@ TEST(VectorTestConstructor, InitializerList) {
   ASSERT_EQ(v[3], 2);
   ASSERT_EQ(v[4], 5);
   ASSERT_EQ(v.size(), 5);
+
+  tlib::Vector<int> v1{1, 2, 5, 4, 3};
+  ASSERT_EQ(v1[2], 5);
+  ASSERT_EQ(v1[3], 4);
+  ASSERT_EQ(v1[4], 3);
 }
 
 TEST(VectorTestConstructor, CopyConstructor) {
-  tlib::Vector<int> v1 = {4,3,2,1};
+  tlib::Vector<int> v1 = {4, 3, 2, 1};
   auto v2 = tlib::Vector<int>(v1);
   ASSERT_EQ(v1.size(), v2.size());
-  for (int i=0; i<v1.size(); i++) {
+  for (int i = 0; i < v1.size(); i++) {
     ASSERT_EQ(v2[i], v1[i]);
   }
 }
 
 TEST(VectorTestConstructor, CopyAssignment) {
-  tlib::Vector<int> v1 = {4,3,2,1};
+  tlib::Vector<int> v1 = {4, 3, 2, 1};
   auto v2 = v1;
   ASSERT_EQ(v1.size(), v2.size());
-  for (int i=0; i<v1.size(); i++) {
+  for (int i = 0; i < v1.size(); i++) {
     ASSERT_EQ(v2[i], v1[i]);
   }
 }
-
 
 TEST(VectorTestCapacity, IsEmptyInitially) {
   auto v = tlib::Vector<int>();
@@ -76,7 +80,12 @@ protected:
     for (int i = 0; i < 3; i++) {
       v1_.push_back(i);
     }
+
+    for (int i=0; i<100; i++) {
+      v2_.push_back(i);
+    }
   }
+
 
   tlib::Vector<int> v0_;
   tlib::Vector<int> v1_;
@@ -97,6 +106,7 @@ TEST_F(VectorTestFixture, Front) {
   ASSERT_ANY_THROW(v.back());
 }
 
+// TODO: Test iterators
 
 TEST(VectorTest, Resize) {
   tlib::Vector<int> v;
@@ -117,7 +127,3 @@ TEST(VectorTest, PushBack) {
   }
 }
 
-TEST(HelloTest, BasicAssertion) {
-  EXPECT_STRNE("Hello", "world");
-  EXPECT_EQ(7 * 7, 49);
-}

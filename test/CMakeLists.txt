@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_CXX_STANDARD 14)
 project(tlib_test CXX)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 #Requires CMake 3.16+
 include(FetchContent)
