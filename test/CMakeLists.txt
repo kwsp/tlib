@@ -22,12 +22,23 @@ include_directories(
   ../tlib
 )
 
+# Vector
 add_executable(
   vector_test 
   vector_test.cpp
 )
 target_link_libraries(
   vector_test
+  gtest_main
+)
+
+# List
+add_executable(
+  list_test 
+  list_test.cpp
+)
+target_link_libraries(
+  list_test
   gtest_main
 )
 
