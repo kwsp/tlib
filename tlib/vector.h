@@ -7,8 +7,9 @@
 #include <exception>
 #include <initializer_list>
 #include <iostream>
-#include <iterator>
 #include <stdexcept>
+
+#include "iterator.h"
 
 #define _MIN_SZ 8
 
@@ -16,52 +17,7 @@ namespace tlib {
 
 template <typename T> class Vector {
 public:
-
-  struct Iterator {
-    using iterator_category = std::random_access_iterator_tag;
-    using value_type = T;
-    using difference_type = std::ptrdiff_t;
-    using reference = T &;
-    using const_reference = const T &;
-    using pointer = T *;
-
-    Iterator(pointer ptr) : m_ptr(ptr){};
-
-    reference operator*() { return *m_ptr; }
-    pointer operator->() { return m_ptr; }
-    Iterator &operator++() {
-      m_ptr++;
-      return *this;
-    }
-
-    Iterator operator++(int) {
-      Iterator tmp = *this;
-      ++(*this);
-      return tmp;
-    }
-
-    friend bool operator==(const Iterator x, const Iterator y) {
-      return x.m_ptr == y.m_ptr;
-    }
-    friend bool operator!=(const Iterator x, const Iterator y) {
-      return x.m_ptr != y.m_ptr;
-    }
-    friend bool operator>(const Iterator x, const Iterator y) {
-      return x.m_ptr > y.m_ptr;
-    }
-    friend bool operator>=(const Iterator x, const Iterator y) {
-      return x.m_ptr >= y.m_ptr;
-    }
-    friend bool operator<(const Iterator x, const Iterator y) {
-      return x.m_ptr < y.m_ptr;
-    }
-    friend bool operator<=(const Iterator x, const Iterator y) {
-      return x.m_ptr <= y.m_ptr;
-    }
-
-  private:
-    pointer m_ptr;
-  };
+  using Iterator = SequenceIterator<T>;
 
   // Construct/copy/destroy
   Vector(std::size_t sz) : elem(new T[sz]) { space = last = elem + sz; }
