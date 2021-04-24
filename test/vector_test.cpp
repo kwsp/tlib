@@ -13,8 +13,8 @@ TEST(VectorTestConstructor, SizeConstructor) {
 
 TEST(VectorTestConstructor, DefaultValue) {
   auto v = tlib::Vector<int>(10, 123);
-  for (int i = 0; i < 10; i++) {
-    ASSERT_EQ(v[i], 123);
+   for (int i = 0; i < 10; i++) {
+   ASSERT_EQ(v[i], 123);
   }
 }
 
@@ -81,11 +81,10 @@ protected:
       v1_.push_back(i);
     }
 
-    for (int i=0; i<100; i++) {
+    for (int i = 0; i < 100; i++) {
       v2_.push_back(i);
     }
   }
-
 
   tlib::Vector<int> v0_;
   tlib::Vector<int> v1_;
@@ -126,4 +125,3 @@ TEST(VectorTest, PushBack) {
     ASSERT_EQ(v[i], i);
   }
 }
-

@@ -7,56 +7,63 @@
 #include <exception>
 #include <initializer_list>
 #include <iostream>
+#include <iterator>
+#include <stdexcept>
 
-#define _MIN_SZ 4
+#define _MIN_SZ 8
 
 namespace tlib {
 
 template <typename T> class Vector {
 public:
-  using size_type = std::size_t;
-  using value_type = T;
-  using const_reference = const T &;
-  using reference = T &;
-  using pointer = T *;
-
   // Construct/copy/destroy
-  Vector(size_type sz) : sz(sz), cap(sz), elem(new value_type[sz]) {}
-  Vector() : Vector(_MIN_SZ) { sz = 0; }
-  Vector(size_type sz, const_reference v) : Vector(sz) {
-    for (size_type i = 0; i < sz; i++) {
-      elem[i] = v;
+  Vector(std::size_t sz) : elem(new T[sz]) { space = last = elem + sz; }
+  Vector() : Vector(_MIN_SZ) { space = elem; }
+  Vector(std::size_t sz, const T &val) : elem(new T[sz]) {
+    space = elem;
+    last = elem + sz;
+    for (auto i = 0; i < sz; ++i) {
+      new (space) T{val};
+      ++space;
     }
   };
 
-  Vector(std::initializer_list<value_type> lst)
-      : elem(new value_type[lst.size()]), sz(lst.size()) {
-    std::copy(lst.begin(), lst.end(), elem);
+  Vector(std::initializer_list<T> lst) : elem(new T[lst.size()]) {
+    space = elem;
+    last = elem + lst.size();
+    for (const T &val : lst) {
+      new (space) T{val};
+      ++space;
+    }
   };
 
   // Copy constructor
-  Vector(const Vector &v) : sz(v.sz), cap(v.sz), elem(new value_type[v.sz]) {
-    for (int i = 0; i < sz; i++) {
-      elem[i] = v[i];
+  Vector(const Vector &v) : elem(new T[v.size()]) {
+    space = elem;
+    last = elem + v.size();
+    for (int i = 0; i < v.size(); i++) {
+      new (space) T{v[i]};
+      ++space;
     }
   };
 
   // Copy assignment
   Vector &operator=(const Vector &v) {
-    sz = v.sz;
-    auto *p = new value_type[sz];
-    for (int i = 0; i < sz; i++) {
-      p[i] = v[i];
+    auto *ptr = new T[v.size()];
+    space = ptr;
+    for (int i = 0; i < v.size(); i++) {
+      new (space) T{v[i]};
+      ++space;
     }
     delete[] elem;
-    elem = p;
+    elem = ptr;
+    last = space;
     return *this;
   }
 
   // Move constructor
-  Vector(Vector &&v) : sz(v.sz), cap(v.sz), elem(v.elem) {
-    v.elem = nullptr;
-    v.sz = 0;
+  Vector(Vector &&v) : elem(v.elem), space(v.space), last(v.last) {
+    v.elem = v.space = v.last = nullptr;
   }
 
   // Move assignment
@@ -66,68 +73,89 @@ public:
 
   // Capacity
   bool empty() const noexcept { return size() == 0; }
-  size_type size() const noexcept { return sz; }
-  size_type capacity() const noexcept { return cap; }
-  void resize(size_type sz) {
+  std::size_t size() const noexcept { return space - elem; }
+  std::size_t capacity() const noexcept { return last - elem; }
+  void resize(std::size_t sz) {
     reserve(sz);
-    this->sz = sz;
+    space = elem + sz;
   }
-  void reserve(size_type sz) {
-    if (sz > cap) {
-      _resize(sz);
+
+  void reserve(std::size_t newsz) { // Increase capacity to sz
+    if (newsz > capacity()) {
+      auto *new_ptr = new T[newsz];
+      for (int i = 0; i < size(); i++)
+        new_ptr[i] = elem[i];
+      space = new_ptr + size();
+      last = new_ptr + newsz;
+      delete[] elem;
+      elem = new_ptr;
     }
   }
+
   void shrink_to_fit() {
-    if (cap > sz) {
-      _resize(sz);
+    if (capacity() > size()) {
+      resize(size());
     }
-  };
-
-  void _resize(size_type sz) {
-    auto *new_ptr = new value_type[sz];
-    std::copy(elem, elem + sz, new_ptr);
-    delete[] elem;
-    elem = new_ptr;
-    cap = sz;
-  }
-
-  void _copy(value_type *from, value_type *to){
-
   };
 
   // Element access
-  reference operator[](size_type n) { return elem[n]; }
-  const_reference operator[](size_type n) const { return elem[n]; }
-  reference front() {
-    if (empty())
-      throw "Empty";
-
-    return elem[0];
+  T &at(std::size_t n) {
+    if (n > size())
+      throw std::out_of_range("Out of range");
+    return elem[n];
   }
-  reference back() {
-    if (empty())
-      throw "Empty";
+  const T &at(std::size_t n) const {
+    if (n > size())
+      throw std::out_of_range("Out of range");
+    return elem[n];
+  }
 
-    return elem[sz - 1];
+  T &operator[](std::size_t n) { return at(n); }
+  const T &operator[](std::size_t n) const { return at(n); }
+  T &front() {
+    if (empty())
+      throw std::out_of_range("Empty");
+
+    return *elem;
+  }
+  T &back() {
+    if (empty())
+      throw std::out_of_range("Empty");
+
+    return *(space - 1);
   }
 
   // Modifiers
-  void push_back(const_reference el) {
-    if (sz + 1 >= cap) {
-      reserve(cap * _factor);
+  void push_back(const T &el) {
+    if (size() + 1 > capacity()) {
+      reserve(size() == 0 ? _MIN_SZ : size() * 2);
     }
-    elem[sz++] = el;
+    new (space) T{el};
+    space++;
   }
-  void pop_back() { sz--; }
+  void pop_back() { space--; }
 
-  value_type *data() const { return elem; }
+  T *data() const { return elem; }
 
 private:
-  size_type sz;
-  size_type cap;
-  const size_type _factor = 2;
+  T *elem;  // pointer to first element
+  T *space; // pointer to first unused element
+  T *last;  // pointer to last slot (one past allocated space)
+};
 
-  value_type *elem;
+template <typename T> class VectorIterator {
+public:
+  using value_type = T;
+  using difference_type = std::ptrdiff_t;
+  using reference = T &;
+  using const_reference = const T &;
+  using pointer = T *;
+  using iterator_category = std::input_iterator_tag;
+
+  VectorIterator() {}
+  VectorIterator(Vector<T> v);
+
+private:
 };
 
 } // namespace tlib
