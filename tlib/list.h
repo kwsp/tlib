@@ -215,7 +215,18 @@ public:
     }
     --_size;
   }
-  void resize(std::size_t newsz);
+
+  void resize(std::size_t newsz) {
+    if (newsz < 0)
+      return;
+    if (newsz > size()) {
+      while (newsz != size())
+        push_back(T{});
+    } else if (newsz < size()) {
+      while (newsz != size())
+        pop_back();
+    }
+  };
   void swap(List other);
 
   iterator begin() { return iterator(head); }

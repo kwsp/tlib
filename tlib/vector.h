@@ -155,7 +155,9 @@ public:
 
   // Iterator
   Iterator begin() { return Iterator(elem); }
+  Iterator begin() const { return Iterator(elem); }
   Iterator end() { return Iterator(space); }
+  Iterator end() const { return Iterator(space); }
 
 private:
   T *elem;  // pointer to first element

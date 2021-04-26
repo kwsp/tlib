@@ -127,3 +127,19 @@ TEST(ListTest, Erase) {
   l.erase();
   ASSERT_EQ(l.size(), 0);
 }
+
+TEST(ListTest, Resize) {
+  tlib::List<int> l{1, 2, 3, 4, 5};
+  ASSERT_EQ(l.size(), 5);
+  l.resize(10);
+  ASSERT_EQ(l.size(), 10);
+  l.resize(2);
+  ASSERT_EQ(l.size(), 2);
+  l.resize(0);
+  ASSERT_EQ(l.size(), 0);
+
+  tlib::List<int>l1;
+  ASSERT_EQ(l1.size(), 0);
+  l1.resize(10);
+  ASSERT_EQ(l1.size(), 10);
+}
