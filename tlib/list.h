@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <iterator>
 #include <stdexcept>
 
 namespace tlib {
@@ -16,8 +17,6 @@ public:
 
     ListItem() : data(new T{}), prev(nullptr), next(nullptr) {}
     ListItem(const T &val) : data(new T{val}), prev(nullptr), next(nullptr) {}
-    ListItem(const T &val, ListItem *prev, ListItem *next)
-        : data{new T{val}}, prev(prev), next(next) {}
 
     // Copy constructor
     ListItem(const ListItem &v) = delete;
@@ -33,12 +32,52 @@ public:
     ~ListItem() { delete data; }
   };
 
+  struct ListIterator {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using reference = T &;
+    using const_reference = const T &;
+    using pointer = T *;
+    using const_pointer = const T *;
+
+    ListIterator(ListItem *ptr) : m_ptr(ptr){};
+
+    reference operator*() { return *(m_ptr->data); }
+    const_reference operator*() const { return *(m_ptr->data); }
+    pointer operator->() { return m_ptr->data; }
+    const_pointer operator->() const { return m_ptr->data; }
+    ListIterator &operator++() {
+      m_ptr = m_ptr->next;
+      return *this;
+    }
+
+    ListIterator operator++(int) {
+      ListIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    friend bool operator==(const ListIterator x, const ListIterator y) {
+      return x.m_ptr == y.m_ptr;
+    }
+    friend bool operator!=(const ListIterator x, const ListIterator y) {
+      return x.m_ptr != y.m_ptr;
+    }
+
+  private:
+    ListItem *m_ptr;
+  };
+
+  using item = ListItem;
+  using iterator = ListIterator;
+
   // Construct/copy/destroy
   List() : _size(0), head(nullptr), tail(nullptr) {}
   List(std::size_t sz) : _size(sz) {
-    auto it = head = new ListItem();
+    auto it = head = new item();
     while (--sz) {
-      it->next = new ListItem();
+      it->next = new item();
       it->next->prev = it;
       it = it->next;
     }
@@ -47,9 +86,9 @@ public:
 
   List(std::initializer_list<T> lst) : _size(lst.size()) {
     auto il_iter = lst.begin();
-    auto it = head = new ListItem(*il_iter);
+    auto it = head = new item(*il_iter);
     while (++il_iter != lst.end()) {
-      it->next = new ListItem(*il_iter);
+      it->next = new item(*il_iter);
       it->next->prev = it;
       it = it->next;
     }
@@ -57,9 +96,20 @@ public:
   }
 
   // Copy constructor TODO
-  List(const List &lst) : _size(lst.size()) {}
+  List(const List &lst) : _size(0) {
+    for (const auto &v : lst) {
+      push_back(v);
+    }
+  }
 
   // Copy assignment
+  List &operator=(const List &lst) {
+    erase();
+    for (const auto &v : lst) {
+      push_back(v);
+    }
+    return *this;
+  }
 
   // Move constructor
   // Move assignment
@@ -103,10 +153,10 @@ public:
   }
 
   void push_back(const T &val) {
-    if (tail == nullptr) {
-      head = tail = new ListItem(val);
+    if (_size == 0) {
+      head = tail = new item(val);
     } else {
-      tail->next = new ListItem(val);
+      tail->next = new item(val);
       tail->next->prev = tail;
       tail = tail->next;
     }
@@ -129,9 +179,9 @@ public:
 
   void push_front(const T &val) {
     if (head == nullptr) {
-      head = tail = new ListItem(val);
+      head = tail = new item(val);
     } else {
-      head->prev = new ListItem(val);
+      head->prev = new item(val);
       head->prev->next = head;
       head = head->prev;
     }
@@ -154,10 +204,15 @@ public:
   void resize(std::size_t newsz);
   void swap(List other);
 
+  iterator begin() { return iterator(head); }
+  iterator begin() const { return iterator(head); }
+  iterator end() { return iterator(nullptr); }
+  iterator end() const { return iterator(nullptr); }
+
 private:
   std::size_t _size;
-  ListItem *head;
-  ListItem *tail;
+  item *head;
+  item *tail;
 };
 
 } // namespace tlib

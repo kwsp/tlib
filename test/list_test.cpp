@@ -27,13 +27,27 @@ TEST(ListTest, InitializerList) {
   ASSERT_EQ(l.at(4), 5);
 }
 
-//TEST(ListTest, Copy) {
-  //tlib::List<int> l{1, 2, 3, 4, 5};
-  //auto l2 = l;
-  //for (int i=0; i<5; i++) {
-    //ASSERT_EQ(l.at(i), l2.at(i));
-  //}
-//}
+TEST(ListTest, Copy) {
+  tlib::List<int> l{1, 2, 3, 4, 5};
+  // Copy constructor
+  tlib::List<int> l2(l);
+  ASSERT_EQ(l.size(), l2.size());
+  for (int i = 0; i < 5; i++) {
+    ASSERT_EQ(l.at(i), l2.at(i));
+  }
+  // Copy assignment
+  tlib::List<int> l3 = l2;
+  ASSERT_EQ(l.size(), l3.size());
+  for (int i = 0; i < 5; i++) {
+    ASSERT_EQ(l.at(i), l3.at(i));
+  }
+}
+
+TEST(ListTest, Iterator) {
+  tlib::List<int> l{0, 1, 2, 3, 4, 5};
+  for (auto &v : l) {
+  }
+}
 
 TEST(ListTest, FrontBack) {
   tlib::List<int> l{1, 2, 3, 4, 5};
