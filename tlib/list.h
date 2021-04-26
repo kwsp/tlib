@@ -83,6 +83,15 @@ public:
     }
     tail = it;
   }
+  List(std::size_t sz, const T &val) : _size(sz) {
+    auto it = head = new item(val);
+    while (--sz) {
+      it->next = new item(val);
+      it->next->prev = it;
+      it = it->next;
+    }
+    tail = it;
+  }
 
   List(std::initializer_list<T> lst) : _size(lst.size()) {
     auto il_iter = lst.begin();
@@ -95,7 +104,7 @@ public:
     tail = it;
   }
 
-  // Copy constructor TODO
+  // Copy constructor
   List(const List &lst) : _size(0) {
     for (const auto &v : lst) {
       push_back(v);
@@ -112,7 +121,12 @@ public:
   }
 
   // Move constructor
+  List(List &&lst) : _size(lst._size), head(lst.head), tail(lst.tail) {
+    lst._size = 0;
+    lst.head = lst.tail = nullptr;
+  }
   // Move assignment
+  List &operator=(List &&lst) { return List(lst); }
 
   ~List() { erase(); }
 

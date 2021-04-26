@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "list.h"
@@ -14,6 +15,14 @@ TEST(ListTest, SizeConstructor) {
   ASSERT_FALSE(l.empty());
   for (int i = 0; i < 10; i++) {
     ASSERT_EQ(l.at(i), 0);
+  }
+}
+
+TEST(ListTest, DefaultValueConstructor) {
+  auto l = tlib::List<int>(10, 123);
+  ASSERT_EQ(l.size(), 10);
+  for (const auto v : l) {
+    ASSERT_EQ(v, 123);
   }
 }
 
@@ -43,10 +52,23 @@ TEST(ListTest, Copy) {
   }
 }
 
+TEST(ListTest, Move) {
+  tlib::List<int> l{1, 2, 3, 4, 5};
+  tlib::List<int> l2 = std::move(l);
+  ASSERT_EQ(l.size(), 0);
+  ASSERT_EQ(l2.size(), 5);
+}
+
 TEST(ListTest, Iterator) {
   tlib::List<int> l{0, 1, 2, 3, 4, 5};
+  tlib::List<int> l2{0, 1, 2, 3, 4, 5};
   for (auto &v : l) {
   }
+  auto it = l2.begin();
+  for (const auto &v : l) {
+    ASSERT_EQ(v, *it++);
+  }
+  ASSERT_EQ(it, l2.end());
 }
 
 TEST(ListTest, FrontBack) {
