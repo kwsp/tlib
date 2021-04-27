@@ -14,4 +14,4 @@ cmake -B build
 cmake --build build -j
 ```
 
-To run tests, `cd build` and either execute the individual binaries or just run `make test`.
+To run tests, `cd build` and either execute the individual binaries or run all tests with `ctest`.

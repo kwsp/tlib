@@ -22,4 +22,4 @@ jobs:
 
     - name: Test
       working-directory: ./test/build
-      run: make test
+      run: ctest
