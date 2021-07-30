@@ -1,139 +1,158 @@
 #ifndef TLIB_VECTOR_H
 #define TLIB_VECTOR_H
 
-#include <algorithm>
-#include <cstddef>
-#include <cstring>
-#include <exception>
 #include <initializer_list>
-#include <iostream>
 #include <stdexcept>
 
-#include "iterator.h"
+#include "tlib/iterator.h"
 
 #define _MIN_SZ 8
 
 namespace tlib {
 
 template <typename T> class Vector {
+private:
+  T *m_buf;   // pointer to first element
+  T *m_space; // pointer to first unused element
+  T *m_last;  // pointer to last slot (one past allocated space)
+
 public:
   using Iterator = SequenceIterator<T>;
 
-  // Construct/copy/destroy
-  Vector(std::size_t sz) : elem(new T[sz]) { space = last = elem + sz; }
-
   // Default constructor
-  Vector() : Vector(_MIN_SZ) { space = elem; }
+  Vector() : Vector(_MIN_SZ) { m_space = m_buf; }
+
+  // Size constructor
+  Vector(std::size_t p_sz) {
+    m_buf = new T[p_sz];
+    m_space = m_last = m_buf + p_sz;
+  }
 
   // Default value constructor
-  Vector(std::size_t sz, const T &val) : elem(new T[sz]) {
-    space = elem;
-    last = elem + sz;
-    for (auto i = 0; i < sz; ++i) {
-      new (space) T{val};
-      ++space;
+  Vector(std::size_t p_sz, const T &p_val) {
+    m_buf = new T[p_sz];
+    m_space = m_buf;
+    m_last = m_buf + p_sz;
+    for (auto i = 0; i < p_sz; ++i) {
+      *m_space = p_val;
+      ++m_space;
     }
   };
 
   // Initializer list
-  Vector(std::initializer_list<T> lst) : elem(new T[lst.size()]) {
-    space = elem;
-    last = elem + lst.size();
-    for (const T &val : lst) {
-      new (space) T{val};
-      ++space;
+  Vector(std::initializer_list<T> p_lst) {
+    m_buf = new T[p_lst.size()];
+    m_space = m_buf;
+    m_last = m_buf + p_lst.size();
+    for (const T &val : p_lst) {
+      *m_space = val;
+      ++m_space;
     }
   };
 
   // Copy constructor
-  Vector(const Vector &v) : elem(new T[v.size()]) {
-    space = elem;
-    last = elem + v.size();
-    for (int i = 0; i < v.size(); i++) {
-      new (space) T{v[i]};
-      ++space;
+  Vector(const Vector &p_copy_src) {
+    m_buf = new T[p_copy_src.size()];
+    m_space = m_buf;
+    m_last = m_buf + p_copy_src.size();
+    for (auto i = 0; i < p_copy_src.size(); i++) {
+      *m_space = p_copy_src[i];
+      ++m_space;
     }
   };
 
   // Copy assignment
-  Vector &operator=(const Vector &v) {
-    auto *ptr = new T[v.size()];
-    space = ptr;
-    for (int i = 0; i < v.size(); i++) {
-      new (space) T{v[i]};
-      ++space;
+  Vector &operator=(const Vector &p_copy_src) {
+    if (this != &p_copy_src) {
+      if (m_buf)
+        delete[] m_buf;
+      m_buf = new T[p_copy_src.size()];
+      m_space = m_buf;
+      m_last = m_buf + p_copy_src.size();
+      for (int i = 0; i < p_copy_src.size(); i++) {
+        *m_space = p_copy_src[i];
+        ++m_space;
+      }
     }
-    delete[] elem;
-    elem = ptr;
-    last = space;
     return *this;
   }
 
   // Move constructor
-  Vector(Vector &&v) : elem(v.elem), space(v.space), last(v.last) {
-    v.elem = v.space = v.last = nullptr;
+  Vector(Vector &&v) : m_buf(v.m_buf), m_space(v.m_space), m_last(v.m_last) {
+    v.m_buf = v.m_space = v.m_last = nullptr;
   }
 
   // Move assignment
-  Vector &operator=(Vector &&v) { return Vector(v); }
+  Vector &operator=(Vector &&p_move_src) {
+    if (this != &p_move_src) {
+      if (m_buf)
+        delete[] m_buf;
 
-  ~Vector() { delete[] elem; };
+      m_buf = p_move_src.m_buf;
+      m_space = p_move_src.m_space;
+      m_last = p_move_src.m_last;
+
+      p_move_src.m_buf = p_move_src.m_space = p_move_src.m_last = nullptr;
+    }
+    return *this;
+  }
+
+  // Destructor
+  ~Vector() { delete[] m_buf; };
 
   // Capacity
   inline bool empty() const noexcept { return size() == 0; }
 
-  std::size_t size() const noexcept { return space - elem; }
+  std::size_t size() const noexcept { return m_space - m_buf; }
 
-  std::size_t capacity() const noexcept { return last - elem; }
+  std::size_t capacity() const noexcept { return m_last - m_buf; }
 
-  void resize(std::size_t sz) {
-    reserve(sz);
-    space = elem + sz;
+  void resize(std::size_t p_sz) {
+    reserve(p_sz);
+    m_space = m_buf + p_sz;
   }
 
-  void reserve(std::size_t newsz) { // Increase capacity to newsz
-    if (newsz > capacity()) {
-      auto *new_ptr = new T[newsz];
+  void reserve(std::size_t p_sz) { // Increase capacity to newsz
+    if (p_sz > capacity()) {
+      auto *new_buf = new T[p_sz];
       for (int i = 0; i < size(); i++)
-        new_ptr[i] = elem[i];
-      space = new_ptr + size();
-      last = new_ptr + newsz;
-      delete[] elem;
-      elem = new_ptr;
+        new_buf[i] = m_buf[i];
+      m_space = new_buf + size();
+      m_last = new_buf + p_sz;
+      delete[] m_buf;
+      m_buf = new_buf;
     }
   }
 
   void shrink_to_fit() {
-    if (capacity() > size()) {
+    if (capacity() > size())
       resize(size());
-    }
   };
 
   // Element access
-  T &at(std::size_t n) {
-    if (n > size())
-      throw std::out_of_range("Out of range");
-    return elem[n];
+  T &operator[](std::size_t p_i) {
+    if (p_i < size())
+      return m_buf[p_i];
+    throw std::out_of_range("Out of range");
   }
-  const T &at(std::size_t n) const {
-    if (n > size())
-      throw std::out_of_range("Out of range");
-    return elem[n];
+  const T &operator[](std::size_t p_i) const {
+    if (p_i < size())
+      return m_buf[p_i];
+    throw std::out_of_range("Out of range");
   }
-
-  T &operator[](std::size_t n) { return elem[n]; }
-  const T &operator[](std::size_t n) const { return elem[n]; }
+  T &at(std::size_t p_i) { return operator[](p_i); }
+  const T &at(std::size_t p_i) const { return operator[](p_i); }
 
   T &front() {
     if (empty())
       throw std::out_of_range("Empty");
-    return *elem;
+    return *m_buf;
   }
 
   T &back() {
     if (empty())
       throw std::out_of_range("Empty");
-    return *(space - 1);
+    return *(m_space - 1);
   }
 
   // Modifiers
@@ -141,28 +160,23 @@ public:
     if (size() + 1 > capacity()) {
       reserve(size() == 0 ? _MIN_SZ : size() * 2);
     }
-    new (space) T{el};
-    space++;
+    new (m_space) T{el};
+    m_space++;
   }
 
   void pop_back() {
     if (empty())
       throw std::out_of_range("Empty");
-    space--;
+    m_space--;
   }
 
-  T *data() const { return elem; }
+  T *data() const { return m_buf; }
 
   // Iterator
-  Iterator begin() { return Iterator(elem); }
-  Iterator begin() const { return Iterator(elem); }
-  Iterator end() { return Iterator(space); }
-  Iterator end() const { return Iterator(space); }
-
-private:
-  T *elem;  // pointer to first element
-  T *space; // pointer to first unused element
-  T *last;  // pointer to last slot (one past allocated space)
+  Iterator begin() { return Iterator(m_buf); }
+  // Iterator begin() const { return Iterator(elem); }
+  Iterator end() { return Iterator(m_space); }
+  // Iterator end() const { return Iterator(space); }
 };
 
 } // namespace tlib

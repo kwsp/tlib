@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "vector.h"
+#include "tlib/vector.h"
 
 TEST(VectorTestConstructor, DefaultConstructor) {
   ASSERT_NO_FATAL_FAILURE(tlib::Vector<int>());
