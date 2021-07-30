@@ -1,7 +1,6 @@
 #ifndef TLIB_LIST_H
 #define TLIB_LIST_H
 
-#include <cstddef>
 #include <initializer_list>
 #include <iterator>
 #include <stdexcept>
@@ -11,25 +10,39 @@ namespace tlib {
 template <typename T> class List {
 public:
   struct ListItem {
-    T *data;
-    ListItem *prev;
-    ListItem *next;
+    T m_data;
+    ListItem *m_prev;
+    ListItem *m_next;
 
-    ListItem() : data(new T{}), prev(nullptr), next(nullptr) {}
-    ListItem(const T &val) : data(new T{val}), prev(nullptr), next(nullptr) {}
+    // Default constructor
+    ListItem() : m_data(T()), m_prev(nullptr), m_next(nullptr) {}
+    // Value constructor
+    ListItem(const T &p_val)
+        : m_data(p_val), m_prev(nullptr), m_next(nullptr) {}
 
     // Copy constructor
-    ListItem(const ListItem &v) = delete;
+    ListItem(const ListItem &p_other) = delete;
     // Copy assignment
-    ListItem &operator=(const ListItem &v) = delete;
+    ListItem &operator=(const ListItem &p_other) = delete;
     // Move constructor
-    ListItem(ListItem &&v) : data(data), prev(prev), next(next) {
-      v.data = nullptr;
+    ListItem(ListItem &&p_move_src)
+        : m_data(std::move(p_move_src.m_data)), m_prev(p_move_src.m_prev),
+          m_next(p_move_src.m_next) {
+      p_move_src.m_prev = p_move_src.m_next = nullptr;
     }
     // Move assignment
-    ListItem &operator=(ListItem &&v) { return ListItem{v}; }
+    ListItem &operator=(ListItem &&p_move_src) {
+      if (this != &p_move_src) {
+        m_data = std::move(p_move_src.m_data);
+        m_prev = p_move_src.m_prev;
+        m_next = p_move_src.m_next;
 
-    ~ListItem() { delete data; }
+        p_move_src.m_next = p_move_src.m_prev = nullptr;
+      }
+      return *this;
+    }
+
+    ~ListItem() {}
   };
 
   struct ListIterator {
@@ -43,12 +56,12 @@ public:
 
     ListIterator(ListItem *ptr) : m_ptr(ptr){};
 
-    reference operator*() { return *(m_ptr->data); }
-    const_reference operator*() const { return *(m_ptr->data); }
-    pointer operator->() { return m_ptr->data; }
-    const_pointer operator->() const { return m_ptr->data; }
+    reference operator*() { return m_ptr->m_data; }
+    const_reference operator*() const { return m_ptr->m_data; }
+    pointer operator->() { return &(m_ptr->m_data); }
+    const_pointer operator->() const { return &(m_ptr->m_data); }
     ListIterator &operator++() {
-      m_ptr = m_ptr->next;
+      m_ptr = m_ptr->m_next;
       return *this;
     }
 
@@ -72,40 +85,46 @@ public:
   using item = ListItem;
   using iterator = ListIterator;
 
+private:
+  std::size_t m_size;
+  item *m_head;
+  item *m_tail;
+
+public:
   // Construct/copy/destroy
-  List() : _size(0), head(nullptr), tail(nullptr) {}
-  List(std::size_t sz) : _size(sz) {
-    auto it = head = new item();
+  List() : m_size(0), m_head(nullptr), m_tail(nullptr) {}
+  List(std::size_t sz) : m_size(sz) {
+    auto it = m_head = new item();
     while (--sz) {
-      it->next = new item();
-      it->next->prev = it;
-      it = it->next;
+      it->m_next = new item();
+      it->m_next->m_prev = it;
+      it = it->m_next;
     }
-    tail = it;
+    m_tail = it;
   }
-  List(std::size_t sz, const T &val) : _size(sz) {
-    auto it = head = new item(val);
+  List(std::size_t sz, const T &val) : m_size(sz) {
+    auto it = m_head = new item(val);
     while (--sz) {
-      it->next = new item(val);
-      it->next->prev = it;
-      it = it->next;
+      it->m_next = new item(val);
+      it->m_next->m_prev = it;
+      it = it->m_next;
     }
-    tail = it;
+    m_tail = it;
   }
 
-  List(std::initializer_list<T> lst) : _size(lst.size()) {
+  List(std::initializer_list<T> lst) : m_size(lst.size()) {
     auto il_iter = lst.begin();
-    auto it = head = new item(*il_iter);
+    auto it = m_head = new item(*il_iter);
     while (++il_iter != lst.end()) {
-      it->next = new item(*il_iter);
-      it->next->prev = it;
-      it = it->next;
+      it->m_next = new item(*il_iter);
+      it->m_next->m_prev = it;
+      it = it->m_next;
     }
-    tail = it;
+    m_tail = it;
   }
 
   // Copy constructor
-  List(const List &lst) : _size(0) {
+  List(const List &lst) : m_size(0) {
     for (const auto &v : lst) {
       push_back(v);
     }
@@ -121,9 +140,10 @@ public:
   }
 
   // Move constructor
-  List(List &&lst) : _size(lst._size), head(lst.head), tail(lst.tail) {
-    lst._size = 0;
-    lst.head = lst.tail = nullptr;
+  List(List &&lst)
+      : m_size(lst.m_size), m_head(lst.m_head), m_tail(lst.m_tail) {
+    lst.m_size = 0;
+    lst.m_head = lst.m_tail = nullptr;
   }
   // Move assignment
   List &operator=(List &&lst) { return List(lst); }
@@ -131,89 +151,90 @@ public:
   ~List() { erase(); }
 
   // Capacity
-  inline bool empty() const noexcept { return _size == 0; }
-  std::size_t size() const noexcept { return _size; }
+  inline bool empty() const noexcept { return m_size == 0; }
+  std::size_t size() const noexcept { return m_size; }
 
   // Element access
-  T &at(std::size_t n) {
-    if (n > _size)
+  T &at(std::size_t p_i) {
+    if (p_i > m_size)
       throw std::out_of_range("Out of range");
-    if (n > (_size / 2)) {
-      auto it = tail;
-      while (++n < _size) {
-        it = it->prev;
+
+    if (p_i > (m_size / 2)) {
+      auto it = m_tail;
+      while (++p_i < m_size) {
+        it = it->m_prev;
       }
-      return *(it->data);
+      return it->m_data;
     } else {
-      auto it = head;
-      while (n--) {
-        it = it->next;
+      auto it = m_head;
+      while (p_i--) {
+        it = it->m_next;
       }
-      return *(it->data);
+      return it->m_data;
     }
   };
 
-  T &front() { return *(head->data); }
+  T &front() { return m_head->m_data; }
 
-  T &back() { return *(tail->data); }
+  T &back() { return m_tail->m_data; }
 
   // Modifiers
   void clear();
   void insert();
   void erase() {
-    while (_size != 0) {
+    while (m_size != 0) {
       pop_back();
     }
   }
 
   void push_back(const T &val) {
-    if (_size == 0) {
-      head = tail = new item(val);
+    if (m_size == 0) {
+      m_head = m_tail = new item(val);
     } else {
-      tail->next = new item(val);
-      tail->next->prev = tail;
-      tail = tail->next;
+      m_tail->m_next = new item(val);
+      m_tail->m_next->m_prev = m_tail;
+      m_tail = m_tail->m_next;
     }
-    ++_size;
+    ++m_size;
   }
 
   void pop_back() {
-    if (_size == 0)
+    if (m_size == 0)
       throw std::out_of_range("Empty list");
-    if (_size == 1) {
-      delete tail;
-      head = tail = nullptr;
+    if (m_size == 1) {
+      delete m_tail;
+      m_head = m_tail = nullptr;
     } else {
-      auto tmp = tail->prev;
-      delete tail;
-      tail = tmp;
+      auto tmp = m_tail->m_prev;
+      delete m_tail;
+      m_tail = tmp;
     }
-    --_size;
+    --m_size;
   }
 
   void push_front(const T &val) {
-    if (head == nullptr) {
-      head = tail = new item(val);
+    if (m_head == nullptr) {
+      m_head = m_tail = new item(val);
     } else {
-      head->prev = new item(val);
-      head->prev->next = head;
-      head = head->prev;
+      m_head->m_prev = new item(val);
+      m_head->m_prev->m_next = m_head;
+      m_head = m_head->m_prev;
     }
-    ++_size;
+    ++m_size;
   }
 
   void pop_front() {
-    if (_size == 0)
+    if (m_size == 0)
       throw std::out_of_range("Empty list");
-    if (_size == 1) {
-      delete head;
-      head = tail = nullptr;
+    if (m_size == 1) {
+      delete m_head;
+      m_head = m_tail = nullptr;
     } else {
-      auto tmp = head->next;
-      delete head;
-      head = tmp;
+      auto tmp = m_head->m_next;
+      delete m_head;
+      m_head = tmp;
     }
-    --_size;
+    --m_size;
   }
 
   void resize(std::size_t newsz) {
@@ -229,15 +250,10 @@ public:
   };
   void swap(List other);
 
-  iterator begin() { return iterator(head); }
-  iterator begin() const { return iterator(head); }
+  iterator begin() { return iterator(m_head); }
+  iterator begin() const { return iterator(m_head); }
   iterator end() { return iterator(nullptr); }
   iterator end() const { return iterator(nullptr); }
-
-private:
-  std::size_t _size;
-  item *head;
-  item *tail;
 };
 
 } // namespace tlib

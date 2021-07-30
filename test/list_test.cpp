@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <gtest/gtest.h>
 
-#include "list.h"
+#include "tlib/list.h"
 
 TEST(ListTest, DefaultConstructor) {
   auto l = tlib::List<int>();
