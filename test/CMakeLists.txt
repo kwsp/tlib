@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 include_directories(
   ./
-  ../tlib)
+  ../)
 
 #Requires CMake 3.16+
 include(FetchContent)
@@ -35,3 +35,4 @@ endfunction()
 
 add_test(vector_test.cpp)
 add_test(list_test.cpp)
+add_test(string_test.cpp)
