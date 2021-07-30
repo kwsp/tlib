@@ -19,30 +19,6 @@ public:
     // Value constructor
     ListItem(const T &p_val)
         : m_data(p_val), m_prev(nullptr), m_next(nullptr) {}
-
-    // Copy constructor
-    ListItem(const ListItem &p_other) = delete;
-    // Copy assignment
-    ListItem &operator=(const ListItem &p_other) = delete;
-    // Move constructor
-    ListItem(ListItem &&p_move_src)
-        : m_data(std::move(p_move_src.m_data)), m_prev(p_move_src.m_prev),
-          m_next(p_move_src.m_next) {
-      p_move_src.m_prev = p_move_src.m_next = nullptr;
-    }
-    // Move assignment
-    ListItem &operator=(ListItem &&p_move_src) {
-      if (this != &p_move_src) {
-        m_data = std::move(p_move_src.m_data);
-        m_prev = p_move_src.m_prev;
-        m_next = p_move_src.m_next;
-
-        p_move_src.m_next = p_move_src.m_prev = nullptr;
-      }
-      return *this;
-    }
-
-    ~ListItem() {}
   };
 
   struct ListIterator {
